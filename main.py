@@ -375,14 +375,20 @@ def main():
     canvas = make_canvas()
     draw_poster(canvas)
     canvas.save(out_path)
+    # The make.fun harness grades /output/entry.png, so write that name
+    # too (the dated file above stays for local runs).
+    entry_path = os.path.join(out_dir, "entry.png")
+    canvas.save(entry_path)
     # Self-check: fail loudly instead of handing the grader a bad file.
-    with open(out_path, "rb") as f:
-        head = f.read(8)
-    if head != b"\x89PNG\r\n\x1a\n" or os.path.getsize(out_path) == 0:
-        print("ERROR: output is not a valid PNG: " + out_path,
-              file=sys.stderr)
-        sys.exit(1)
+    for path in (out_path, entry_path):
+        with open(path, "rb") as f:
+            head = f.read(8)
+        if head != b"\x89PNG\r\n\x1a\n" or os.path.getsize(path) == 0:
+            print("ERROR: output is not a valid PNG: " + path,
+                  file=sys.stderr)
+            sys.exit(1)
     print("Wrote " + out_path)
+    print("Wrote " + entry_path)
 
 
 if __name__ == "__main__":
