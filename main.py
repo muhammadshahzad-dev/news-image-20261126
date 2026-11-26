@@ -270,6 +270,20 @@ class BitmapCanvas:
         with open(path, "wb") as f:
             f.write(_png_bytes(self.w, self.h, self.buf))
 
+    def downscale(self, new_w, new_h):
+        # Nearest-neighbour downscale of the pixel buffer.
+        src_w, src_h, src = self.w, self.h, self.buf
+        dst = bytearray(new_w * new_h * 3)
+        for y in range(new_h):
+            sy = y * src_h // new_h
+            for x in range(new_w):
+                sx = x * src_w // new_w
+                si = (sy * src_w + sx) * 3
+                di = (y * new_w + x) * 3
+                dst[di:di + 3] = src[si:si + 3]
+        self.buf = dst
+        self.w, self.h = new_w, new_h
+
 
 # ------------------------------------------------------------ Pillow path
 class PillowCanvas:
@@ -316,6 +330,11 @@ class PillowCanvas:
 
     def save(self, path):
         self.img.save(path, "PNG")
+
+    def downscale(self, new_w, new_h):
+        from PIL import Image, ImageDraw
+        self.img = self.img.resize((new_w, new_h), Image.LANCZOS)
+        self.draw = ImageDraw.Draw(self.img)
 
 
 def make_canvas():
@@ -374,6 +393,9 @@ def main():
     out_path = os.path.join(out_dir, OUT_NAME)
     canvas = make_canvas()
     draw_poster(canvas)
+    # The make.fun gate caps images at 1024x1024; the poster is drawn at
+    # 1600x1000, so downscale it to 1024x640 before saving.
+    canvas.downscale(1024, 640)
     canvas.save(out_path)
     # The make.fun harness grades /output/entry.png, so write that name
     # too (the dated file above stays for local runs).
